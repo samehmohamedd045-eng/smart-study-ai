@@ -1,61 +1,73 @@
 import streamlit as st
 import pandas as pd
 
-st.title("🎓 Smart Study Assistant AI")
-st.write("نظام مساعد دراسة ذكي يحلل درجاتك ويقترح جدول مذاكرة حسب الأولوية")
+# ---------- إعداد الصفحة ----------
+st.set_page_config(page_title="Smart Study AI", page_icon="🎓", layout="centered")
 
-subjects=[]
-scores=[]
-totals=[]
-diffs=[]
+st.markdown("""
+<style>
+.main {background-color: #0f172a;}
+h1 {color: #22d3ee; text-align:center;}
+.stNumberInput label, .stTextInput label, .stSelectbox label {
+    color: #e5e7eb !important;
+}
+.stButton>button {
+    background-color: #22c55e;
+    color: white;
+    border-radius: 12px;
+    height: 3em;
+    width: 100%;
+    font-size: 18px;
+}
+</style>
+""", unsafe_allow_html=True)
 
-n = st.number_input("عدد المواد",1,12,5)
+# ---------- العنوان ----------
+st.title("📚 Smart Study AI Planner")
 
-for i in range(n):
-    st.subheader(f"مادة {i+1}")
-    subjects.append(st.text_input("اسم المادة",key=f"s{i}"))
-    scores.append(st.number_input("درجتك",0,100,key=f"sc{i}"))
-    totals.append(st.number_input("الدرجة النهائية",1,100,key=f"t{i}"))
-    diffs.append(st.selectbox("الصعوبة",["سهل","متوسط","صعب"],key=f"d{i}"))
+# ---------- إدخال البيانات ----------
+num_subjects = st.number_input("عدد المواد", min_value=1, max_value=12, step=1)
 
-# تحويل الصعوبة لأرقام
-diff_map = {"سهل":1,"متوسط":2,"صعب":3}
+subjects = []
+priorities = []
+difficulties = []
 
-if st.button("تحليل ذكي"):
+for i in range(int(num_subjects)):
+    st.subheader(f"المادة {i+1}")
 
-    data=[]
+    name = st.text_input("اسم المادة", key=f"name{i}")
+    priority = st.selectbox("الأولوية", [1,2,3,4,5], key=f"p{i}")
+    difficulty = st.selectbox("الصعوبة", [1,2,3], key=f"d{i}")
 
-    for s,sc,t,d in zip(subjects,scores,totals,diffs):
-        if s.strip()=="":
-            continue
-        percent = sc/t*100
-        diff_num = diff_map[d]
-        priority = (100-percent)+(diff_num*12)
-        data.append([s,percent,diff_num,priority])
+    subjects.append(name)
+    priorities.append(priority)
+    difficulties.append(difficulty)
 
-    if len(data)==0:
-        st.warning("من فضلك أدخل مواد")
-        st.stop()
+total_hours = st.number_input("عدد ساعات المذاكرة المتاحة اليوم", min_value=1, max_value=16, step=1)
 
-    df = pd.DataFrame(data,columns=["المادة","النسبة","الصعوبة","priority"])
-    df = df.sort_values("priority",ascending=False)
+# ---------- الحساب ----------
+if st.button("احسب خطة المذاكرة"):
 
-    st.subheader("📊 تحليل الأداء")
-    st.dataframe(df)
+    df = pd.DataFrame({
+        "subject": subjects,
+        "priority": priorities,
+        "difficulty": difficulties
+    })
 
-    st.subheader("📅 جدول مذاكرة ذكي")
+    # وزن = أولوية × صعوبة
+    df["weight"] = df["priority"] * df["difficulty"]
 
-    max_p = df["priority"].max()
-    min_p = df["priority"].min()
+    total_weight = df["weight"].sum()
 
-    for _,row in df.iterrows():
-        ratio = (row["priority"]-min_p)/(max_p-min_p+0.0001)
-        minutes = int(30 + ratio*70)   # من 30 إلى 100 دقيقة
-        st.write(f"📘 {row['المادة']} → {minutes} دقيقة")
+    total_minutes = total_hours * 60
 
-    st.subheader("📈 رسم بياني للمستوى")
-    st.bar_chart(df.set_index("المادة")["النسبة"])
+    df["minutes"] = (df["weight"] / total_weight) * total_minutes
+    df["minutes"] = df["minutes"].round().astype(int)
 
-    # توصيات ذكية
-    weak = df.iloc[0]["المادة"]
-    st.success(f"🔎 أعلى أولوية للمذاكرة: {weak}")
+    # ---------- عرض النتائج ----------
+    st.subheader("⏱️ خطة المذاكرة المقترحة")
+
+    for _, row in df.iterrows():
+        st.write(f"✅ {row['subject']} : {row['minutes']} دقيقة")
+
+    st.success("تم توزيع الوقت حسب الأولوية والصعوبة بنجاح 👍")
