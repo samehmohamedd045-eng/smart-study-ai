@@ -1,89 +1,121 @@
 import streamlit as st
 import pandas as pd
 
-# ---------- إعدادات الصفحة ----------
-st.set_page_config(
-    page_title="Smart Study AI",
-    page_icon="📘",
-    layout="centered"
-)
+# ---------- إعداد الصفحة ----------
+st.set_page_config(page_title="Sameh Smart Study Assistant", page_icon="🧠")
 
-# ---------- ستايل الألوان ----------
+# ---------- ستايل ----------
 st.markdown("""
 <style>
 .stApp {
-    background-color: #e9ecef;
+    background-color: #6b7280 !important;
 }
-h1, h2, h3, label {
-    color: #ffffff !important;
+h1,h2,h3,h4,h5,h6,p,label,div,span {
+    color: white !important;
 }
-.block-container {
-    background: #6c757d;
-    padding: 2rem;
-    border-radius: 15px;
+.stButton>button {
+    background-color: #22c55e;
+    color: white;
+    border-radius: 10px;
+    height: 3em;
+    font-size: 18px;
 }
 </style>
 """, unsafe_allow_html=True)
 
-# ---------- العنوان ----------
-st.title("📘 Smart Study AI")
-st.caption("تنظيم وقت المذاكرة بالدرجات — تصميم Sameh")
+# ---------- عنوان ----------
+st.title("🧠 Sameh Smart Study Assistant")
+st.caption("Developed by Sameh Mohamed — Smart Study AI Project")
 
-# ---------- إدخال عدد المواد ----------
-num_subjects = st.number_input("عدد المواد", 1, 10, 5)
+page = st.radio("القائمة", ["المخطط الذكي", "About المشروع"])
 
-subjects = []
-scores = []
+# =========================
+# صفحة المخطط الذكي
+# =========================
+if page == "المخطط الذكي":
 
-st.subheader("✍️ اكتب المواد والدرجة")
+    st.write("تحليل الدرجات + الصعوبة = توزيع وقت مذاكرة ذكي")
 
-for i in range(num_subjects):
-    col1, col2 = st.columns(2)
+    with st.expander("كيف يعمل النظام؟"):
+        st.write("""
+        نحسب نسبة درجتك  
+        نحدد مستوى الضعف  
+        نضرب في معامل الصعوبة  
+        نحسب وزن لكل مادة  
+        نوزع الوقت حسب الوزن
+        """)
 
-    with col1:
-        sub = st.text_input(f"اسم المادة {i+1}", key=f"s{i}")
+    num_subjects = st.number_input("عدد المواد", 1, 12, 3)
 
-    with col2:
-        level = st.selectbox(
-            f"الدرجة",
-            ["سهل", "متوسط", "صعب"],
-            key=f"l{i}"
-        )
+    diff_map = {"سهل":1, "متوسط":2, "صعب":3}
+    rows = []
 
-    if sub:
-        subjects.append(sub)
+    for i in range(int(num_subjects)):
+        st.subheader(f"المادة {i+1}")
 
-        if level == "سهل":
-            scores.append(1)
-        elif level == "متوسط":
-            scores.append(2)
-        else:
-            scores.append(3)
+        name = st.text_input("اسم المادة", key=f"n{i}")
+        score = st.number_input("درجتك", 0, 100, key=f"s{i}")
+        total = st.number_input("الدرجة النهائية", 1, 100, key=f"t{i}")
+        diff = st.selectbox("الصعوبة", ["سهل","متوسط","صعب"], key=f"d{i}")
 
-# ---------- الوقت الكلي ----------
-total_hours = st.slider("⏱️ عدد ساعات المذاكرة اليوم", 1, 12, 5)
+        if name.strip():
+            percent = score / total * 100
+            weakness = max(1, 100 - percent)
+            weight = weakness * diff_map[diff]
+            rows.append([name, percent, weight])
 
-# ---------- زر الحساب ----------
-if st.button("📊 احسب خطة المذاكرة"):
+    hours = st.number_input("ساعات المذاكرة", 1, 16, 4)
 
-    if len(subjects) == 0:
-        st.warning("اكتب مواد الأول")
-    else:
+    if st.button("احسب الخطة"):
 
-        df = pd.DataFrame({
-            "المادة": subjects,
-            "الدرجة": scores
-        })
+        if not rows:
+            st.warning("ادخل مواد")
+            st.stop()
 
-        total_score = df["الدرجة"].sum()
-        total_minutes = total_hours * 60
+        df = pd.DataFrame(rows, columns=["المادة","النسبة","الوزن"])
 
-        df["دقائق المذاكرة"] = (
-            df["الدرجة"] / total_score * total_minutes
-        ).round().astype(int)
+        total_weight = df["الوزن"].sum()
+        total_minutes = hours * 60
 
-        st.subheader("✅ الخطة المقترحة")
+        df["دقائق"] = (df["الوزن"]/total_weight)*total_minutes
+        df["دقائق"] = df["دقائق"].round()
 
-        st.dataframe(df, use_container_width=True)
+        df = df.sort_values("دقائق", ascending=False)
 
-        st.success("جاهز للمذاكرة 💪")
+        st.subheader("⏱️ الخطة")
+
+        for _, r in df.iterrows():
+            st.markdown(f"""
+            <div style="
+                background:#4b5563;
+                padding:15px;
+                border-radius:12px;
+                margin-bottom:10px;">
+                <h3>📘 {r['المادة']}</h3>
+                <p>⏱️ {int(r['دقائق'])} دقيقة</p>
+                <p>📊 {round(r['النسبة'],1)}%</p>
+            </div>
+            """, unsafe_allow_html=True)
+
+        top = df.iloc[0]["المادة"]
+        st.info(f"🎯 ابدأ بمادة: {top}")
+
+        st.bar_chart(df.set_index("المادة")["النسبة"])
+
+# =========================
+# About
+# =========================
+else:
+    st.header("📘 About")
+
+    st.write("""
+    Sameh Smart Study Assistant
+
+    مساعد مذاكرة ذكي يعتمد على تحليل الأداء
+    لتوزيع وقت المذاكرة.
+
+    التقنيات:
+    Python + Streamlit + Pandas
+
+    Developed by Sameh Mohamed
+    """)
