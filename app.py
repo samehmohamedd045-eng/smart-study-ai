@@ -22,6 +22,33 @@ for i in range(n):
 if st.button("تحليل ذكي"):
 
     data=[]
+
+    for s,sc,t,d in zip(subjects,scores,totals,diffs):
+        percent = sc/t*100
+        priority = (100-percent)+(d*10)
+        data.append([s,percent,d,priority])
+
+    df=pd.DataFrame(data,columns=["المادة","النسبة","الصعوبة","priority"])
+
+    df=df.sort_values("priority",ascending=False)
+
+    st.subheader("📊 تحليل الأداء")
+    st.dataframe(df)
+
+    st.subheader("📅 جدول مذاكرة ذكي حسب الأولوية")
+
+    max_p = df["priority"].max()
+    min_p = df["priority"].min()
+
+    for i,row in df.iterrows():
+        ratio = (row["priority"]-min_p)/(max_p-min_p+0.01)
+        minutes = int(30 + ratio*60)
+        st.write(f"ذاكر {row['المادة']} — {minutes} دقيقة")
+
+    st.bar_chart(df.set_index("المادة")["النسبة"])
+
+
+    data=[]
  
     for s,sc,t,d in zip(subjects,scores,totals,diffs):
         percent = sc/t*100
