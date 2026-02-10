@@ -28,17 +28,17 @@ if st.button("تحليل ذكي"):
         priority = (100-percent)+(d*10)
         data.append([s,percent,d,priority])
 
-    df=pd.DataFrame(data,columns=["المادة","النسبة","الصعوبة","أولوية"])
+    df=pd.DataFrame(data,columns=["المادة","النسبة","الصعوبة","priority"])
 
     df=df.sort_values("أولوية",ascending=False)
 
     st.subheader("📅 جدول مذاكرة ذكي حسب الأولوية")
 
-max_p = df["أولوية"].max()
-min_p = df["أولوية"].min()
+max_p = df["priority"].max()
+min_p = df["priority"].min()
 
 for i,row in df.iterrows():
-    ratio = (row["أولوية"]-min_p)/(max_p-min_p+0.01)
+    ratio = (row["priority"]-min_p)/(max_p-min_p+0.01)
     minutes = int(30 + ratio*60)   # من 30 إلى 90 دقيقة
     st.write(f"ذاكر {row['المادة']} — {minutes} دقيقة")
 
