@@ -39,6 +39,7 @@ h1 {color:#2563eb; text-align:center;}
 """, unsafe_allow_html=True)
 
 st.title("🎓 المساعد الدراسي الذكي")
+st.caption("Developed by Sameh Mohamed — Smart Study AI Project")
 
 num_subjects = st.number_input("عدد المواد", 1, 12, 3)
 
