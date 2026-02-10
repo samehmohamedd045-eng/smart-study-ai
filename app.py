@@ -2,6 +2,13 @@ import streamlit as st
 import pandas as pd
 
 st.set_page_config(page_title="Smart Study AI", page_icon="📚")
+st.markdown("""
+<style>
+.stApp {
+    background-color: #f1f5f9 !important;
+}
+</style>
+""", unsafe_allow_html=True)
 
 # ---------- ألوان مريحة ----------
 st.markdown("""
