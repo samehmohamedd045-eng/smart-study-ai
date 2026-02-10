@@ -2,72 +2,91 @@ import streamlit as st
 import pandas as pd
 
 # ---------- إعداد الصفحة ----------
-st.set_page_config(page_title="Smart Study AI", page_icon="🎓", layout="centered")
+st.set_page_config(page_title="Smart Study AI", page_icon="📚", layout="centered")
 
+# ---------- ستايل وألوان مريحة ----------
 st.markdown("""
 <style>
-.main {background-color: #0f172a;}
-h1 {color: #22d3ee; text-align:center;}
+.main {
+    background-color: #f8fafc;
+}
+h1 {
+    color: #2563eb;
+    text-align:center;
+}
 .stNumberInput label, .stTextInput label, .stSelectbox label {
-    color: #e5e7eb !important;
+    color: #334155 !important;
+    font-weight: 600;
 }
 .stButton>button {
-    background-color: #22c55e;
+    background-color: #10b981;
     color: white;
-    border-radius: 12px;
+    border-radius: 10px;
     height: 3em;
-    width: 100%;
     font-size: 18px;
+}
+.block-container {
+    padding-top: 2rem;
 }
 </style>
 """, unsafe_allow_html=True)
 
-# ---------- العنوان ----------
-st.title("📚 Smart Study AI Planner")
+# ---------- عنوان ----------
+st.title("🎓 Smart Study AI Planner")
 
-# ---------- إدخال البيانات ----------
-num_subjects = st.number_input("عدد المواد", min_value=1, max_value=12, step=1)
+# ---------- إدخال ----------
+num_subjects = st.number_input("عدد المواد", 1, 12, 3)
 
 subjects = []
+levels = []
 priorities = []
-difficulties = []
+
+level_map = {
+    "سهل": 1,
+    "متوسط": 2,
+    "صعب": 3
+}
 
 for i in range(int(num_subjects)):
     st.subheader(f"المادة {i+1}")
 
     name = st.text_input("اسم المادة", key=f"name{i}")
-    priority = st.selectbox("الأولوية", [1,2,3,4,5], key=f"p{i}")
-    difficulty = st.selectbox("الصعوبة", [1,2,3], key=f"d{i}")
+    level_text = st.selectbox("درجة الصعوبة", ["سهل","متوسط","صعب"], key=f"lvl{i}")
+    priority = st.selectbox("الأولوية", ["منخفضة","متوسطة","عالية"], key=f"pri{i}")
 
     subjects.append(name)
-    priorities.append(priority)
-    difficulties.append(difficulty)
+    levels.append(level_map[level_text])
 
-total_hours = st.number_input("عدد ساعات المذاكرة المتاحة اليوم", min_value=1, max_value=16, step=1)
+    pri_map = {
+        "منخفضة": 1,
+        "متوسطة": 2,
+        "عالية": 3
+    }
+    priorities.append(pri_map[priority])
+
+total_hours = st.number_input("عدد ساعات المذاكرة اليوم", 1, 16, 4)
 
 # ---------- الحساب ----------
-if st.button("احسب خطة المذاكرة"):
+if st.button("📊 احسب خطة المذاكرة"):
 
     df = pd.DataFrame({
         "subject": subjects,
-        "priority": priorities,
-        "difficulty": difficulties
+        "difficulty": levels,
+        "priority": priorities
     })
 
-    # وزن = أولوية × صعوبة
-    df["weight"] = df["priority"] * df["difficulty"]
+    # الوزن = صعوبة × أولوية
+    df["weight"] = df["difficulty"] * df["priority"]
 
     total_weight = df["weight"].sum()
-
     total_minutes = total_hours * 60
 
     df["minutes"] = (df["weight"] / total_weight) * total_minutes
     df["minutes"] = df["minutes"].round().astype(int)
 
-    # ---------- عرض النتائج ----------
-    st.subheader("⏱️ خطة المذاكرة المقترحة")
+    st.subheader("⏱️ التوزيع الذكي للمذاكرة")
 
     for _, row in df.iterrows():
-        st.write(f"✅ {row['subject']} : {row['minutes']} دقيقة")
+        st.success(f"{row['subject']} — {row['minutes']} دقيقة")
 
-    st.success("تم توزيع الوقت حسب الأولوية والصعوبة بنجاح 👍")
+    st.info("التوزيع تم حسب الصعوبة + الأولوية")
