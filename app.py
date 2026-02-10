@@ -1,5 +1,9 @@
 import streamlit as st
 import pandas as pd
+from io import BytesIO
+from reportlab.lib.pagesizes import A4
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+from reportlab.lib.styles import getSampleStyleSheet
 
 # ---------- إعداد الصفحة ----------
 st.set_page_config(page_title="Sameh Smart Study Assistant", page_icon="🧠")
@@ -10,11 +14,9 @@ st.markdown("""
 .stApp {
     background-color: #6b7280 !important;
 }
-
 h1,h2,h3,h4,h5,h6,p,label,div,span {
     color: white !important;
 }
-
 .stButton>button {
     background-color: #22c55e;
     color: white;
@@ -29,9 +31,7 @@ h1,h2,h3,h4,h5,h6,p,label,div,span {
 st.title("🧠 Sameh Smart Study Assistant")
 st.caption("Developed by Sameh Mohamed — Smart Study AI Project")
 
-# ---------- قائمة الصفحات ----------
 page = st.radio("القائمة", ["المخطط الذكي", "About المشروع"])
-
 
 # =========================
 # صفحة المخطط الذكي
@@ -42,12 +42,12 @@ if page == "المخطط الذكي":
 
     with st.expander("كيف يعمل النظام الذكي؟"):
         st.write("""
-        🔹 يحسب نسبة درجتك في كل مادة  
-        🔹 يحدد مستوى الضعف = 100 − النسبة  
-        🔹 يضرب الضعف × عامل الصعوبة  
-        🔹 ينتج وزن لكل مادة  
-        🔹 يوزع الوقت حسب الوزن  
-        🔹 يعطي توصية بأهم مادة تبدأ بها
+        🔹 يحسب نسبة درجتك  
+        🔹 يحدد مستوى الضعف  
+        🔹 يضرب في عامل الصعوبة  
+        🔹 يحسب وزن لكل مادة  
+        🔹 يوزع الوقت تلقائيًا  
+        🔹 يعطي توصية بالبداية
         """)
 
     num_subjects = st.number_input("عدد المواد", 1, 12, 3)
@@ -71,7 +71,6 @@ if page == "المخطط الذكي":
 
     hours = st.number_input("ساعات المذاكرة", 1, 16, 4)
 
-    # ---------- الحساب ----------
     if st.button("احسب الخطة الذكية"):
 
         if not rows:
@@ -93,7 +92,6 @@ if page == "المخطط الذكي":
 
         st.subheader("⏱️ خطة المذاكرة")
 
-        # ---------- عرض بالكروت ----------
         for _, r in df.iterrows():
             st.markdown(f"""
             <div style="
@@ -109,14 +107,35 @@ if page == "المخطط الذكي":
             </div>
             """, unsafe_allow_html=True)
 
-        # ---------- نصيحة ذكية ----------
         top_subject = df.iloc[0]["المادة"]
-        st.info(f"🎯 نصيحة ذكية: ابدأ مذاكرتك اليوم بمادة {top_subject} لأنها الأعلى احتياجًا للوقت.")
+        st.info(f"🎯 نصيحة ذكية: ابدأ بمادة {top_subject}")
 
-        # ---------- رسم ----------
         st.subheader("📊 مستوى الدرجات")
         st.bar_chart(df.set_index("المادة")["النسبة"])
 
+        # ---------- إنشاء PDF ----------
+        buffer = BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=A4)
+        styles = getSampleStyleSheet()
+        story = []
+
+        story.append(Paragraph("Sameh Smart Study Assistant", styles['Title']))
+        story.append(Spacer(1,12))
+
+        for _, r in df.iterrows():
+            text = f"{r['المادة']} — {int(r['دقائق'])} دقيقة — {round(r['النسبة'],1)}%"
+            story.append(Paragraph(text, styles['Normal']))
+            story.append(Spacer(1,8))
+
+        doc.build(story)
+        pdf_bytes = buffer.getvalue()
+
+        st.download_button(
+            "📄 تحميل الخطة PDF",
+            pdf_bytes,
+            file_name="study_plan_sameh.pdf",
+            mime="application/pdf"
+        )
 
 # =========================
 # صفحة About
@@ -126,24 +145,16 @@ elif page == "About المشروع":
     st.header("📘 About المشروع")
 
     st.write("""
-    🧠 **Sameh Smart Study Assistant**
+    🧠 Sameh Smart Study Assistant
 
-    مساعد دراسي ذكي يساعد الطلاب على توزيع وقت المذاكرة
-    بناءً على تحليل الدرجات ومستوى صعوبة المواد.
+    مساعد دراسي ذكي يوزع وقت المذاكرة حسب تحليل الأداء والصعوبة.
 
-    🔬 **فكرة الذكاء:**
-    - حساب نسبة الأداء
-    - تحديد مستوى الضعف
-    - حساب وزن لكل مادة
-    - توزيع وقت المذاكرة تلقائيًا
-    - تقديم توصية ببداية المذاكرة
+    🔬 يعتمد على:
+    تحليل نسبة الدرجات + عامل الصعوبة + وزن القرار.
 
-    ⚙️ **التقنيات المستخدمة:**
-    Python — Streamlit — Pandas — Data Analysis
+    ⚙️ التقنيات:
+    Python — Streamlit — Pandas — PDF Report
 
-    👨‍💻 **تطوير:**
+    👨‍💻 تطوير:
     Sameh Mohamed
-
-    🎯 **هدف المشروع:**
-    المذاكرة بذكاء بدل المذاكرة بعدد ساعات فقط.
     """)
