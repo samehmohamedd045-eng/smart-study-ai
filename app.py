@@ -12,16 +12,16 @@ st.markdown("""
 }
 
 /* النص العام أسود */
-h1,h2,h3,h4,h5,h6,p,label,div,span {
+h1,h2,h3,h4,h5,h6,p,label {
     color: black !important;
 }
 
-/* نص قائمة الصعوبة أبيض فقط */
-div[data-baseweb="select"] span {
+/* إجبار نص selectbox يكون أبيض */
+div[data-baseweb="select"] * {
     color: white !important;
 }
 
-/* الأزرار */
+/* زر */
 .stButton>button {
     background-color: white;
     color: black;
@@ -34,12 +34,12 @@ div[data-baseweb="select"] span {
 
 # ---------- عنوان ----------
 st.title("🧠 Sameh Smart Study Assistant")
-st.caption("Developed by المهندس سامح — Smart Study AI Project")
+st.caption("Developed by Sameh Mohamed — Smart Study AI Project")
 
 page = st.radio("القائمة", ["المخطط الذكي", "About المشروع"])
 
 # =========================
-# صفحة المخطط الذكي
+# المخطط الذكي
 # =========================
 if page == "المخطط الذكي":
 
@@ -127,5 +127,5 @@ else:
     التقنيات:
     Python + Streamlit + Pandas
 
-    Developed by المهندس سامح
+    Developed by Sameh Mohamed
     """)
