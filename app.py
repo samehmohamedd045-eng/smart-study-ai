@@ -1,135 +1,121 @@
 import streamlit as st
 import pandas as pd
 
-# ================= إعداد الصفحة =================
-st.set_page_config(
-    page_title="Smart Study AI",
-    page_icon="📚",
-    layout="centered"
-)
+# ---------- إعداد الصفحة ----------
+st.set_page_config(page_title="Sameh Smart Study Assistant", page_icon="🧠")
 
-# ================== تصميم الألوان ==================
+# ---------- ستايل ----------
 st.markdown("""
 <style>
-
 .stApp {
-    background-color: #8f8f8f;
+    background-color: #6b7280 !important;
 }
-
-/* النص */
-html, body, [class*="css"] {
-    color: black;
+h1,h2,h3,h4,h5,h6,p,label,div,span {
+    color: white !important;
 }
-
-/* كروت النتائج */
-div[data-testid="stMetric"] {
-    background-color: white;
-    border-radius: 14px;
-    padding: 14px;
-    box-shadow: 0px 2px 6px rgba(0,0,0,0.25);
-}
-
-/* الأزرار */
 .stButton>button {
-    background-color: white;
-    color: black;
+    background-color: #22c55e;
+    color: white;
     border-radius: 10px;
-    padding: 10px 18px;
-    font-weight: bold;
+    height: 3em;
+    font-size: 18px;
 }
-
 </style>
 """, unsafe_allow_html=True)
 
-# ================== العنوان ==================
-st.title("📚 Smart Study AI Assistant")
-st.caption("Developed by المهندس سامح")
+# ---------- عنوان ----------
+st.title("🧠 Sameh Smart Study Assistant")
+st.caption("Developed by Sameh Mohamed — Smart Study AI Project")
 
-st.write("مساعد ذكي لتنظيم وقت المذاكرة حسب درجاتك ومستوى صعوبة المواد")
+page = st.radio("القائمة", ["المخطط الذكي", "About المشروع"])
 
-# ================== إدخال البيانات ==================
-num_subjects = st.number_input("عدد المواد", 1, 12)
+# =========================
+# صفحة المخطط الذكي
+# =========================
+if page == "المخطط الذكي":
 
-difficulty_map = {
-    "سهل": 1,
-    "متوسط": 2,
-    "صعب": 3
-}
+    st.write("تحليل الدرجات + الصعوبة = توزيع وقت مذاكرة ذكي")
 
-data = []
+    with st.expander("كيف يعمل النظام؟"):
+        st.write("""
+        نحسب نسبة درجتك  
+        نحدد مستوى الضعف  
+        نضرب في معامل الصعوبة  
+        نحسب وزن لكل مادة  
+        نوزع الوقت حسب الوزن
+        """)
 
-for i in range(num_subjects):
-    st.subheader(f"المادة {i+1}")
+    num_subjects = st.number_input("عدد المواد", 1, 12, 3)
 
-    col1, col2 = st.columns(2)
+    diff_map = {"سهل":1, "متوسط":2, "صعب":3}
+    rows = []
 
-    with col1:
-        name = st.text_input("اسم المادة", key=f"name{i}")
+    for i in range(int(num_subjects)):
+        st.subheader(f"المادة {i+1}")
 
-    with col2:
-        grade = st.number_input("درجتك من 100", 0, 100, key=f"grade{i}")
+        name = st.text_input("اسم المادة", key=f"n{i}")
+        score = st.number_input("درجتك", 0, 100, key=f"s{i}")
+        total = st.number_input("الدرجة النهائية", 1, 100, key=f"t{i}")
+        diff = st.selectbox("الصعوبة", ["سهل","متوسط","صعب"], key=f"d{i}")
 
-    diff_text = st.selectbox(
-        "مستوى الصعوبة",
-        ["سهل", "متوسط", "صعب"],
-        key=f"diff{i}"
-    )
+        if name.strip():
+            percent = score / total * 100
+            weakness = max(1, 100 - percent)
+            weight = weakness * diff_map[diff]
+            rows.append([name, percent, weight])
 
-    data.append({
-        "name": name,
-        "grade": grade,
-        "difficulty": difficulty_map[diff_text]
-    })
+    hours = st.number_input("ساعات المذاكرة", 1, 16, 4)
 
-# ================== الحساب الذكي ==================
-if st.button("إنشاء خطة المذاكرة الذكية"):
+    if st.button("احسب الخطة"):
 
-    df = pd.DataFrame(data)
+        if not rows:
+            st.warning("ادخل مواد")
+            st.stop()
 
-    if df["name"].str.strip().eq("").all():
-        st.warning("من فضلك أدخل أسماء المواد")
-        st.stop()
+        df = pd.DataFrame(rows, columns=["المادة","النسبة","الوزن"])
 
-    df["need"] = 100 - df["grade"]
-    df["weight"] = df["need"] * df["difficulty"]
+        total_weight = df["الوزن"].sum()
+        total_minutes = hours * 60
 
-    total_weight = df["weight"].sum()
+        df["دقائق"] = (df["الوزن"]/total_weight)*total_minutes
+        df["دقائق"] = df["دقائق"].round()
 
-    if total_weight == 0:
-        st.error("لا توجد مواد تحتاج وقت مذاكرة")
-        st.stop()
+        df = df.sort_values("دقائق", ascending=False)
 
-    TOTAL_MINUTES = 300  # إجمالي وقت المذاكرة
+        st.subheader("⏱️ الخطة")
 
-    df["study_minutes"] = (df["weight"] / total_weight * TOTAL_MINUTES).round()
+        for _, r in df.iterrows():
+            st.markdown(f"""
+            <div style="
+                background:#4b5563;
+                padding:15px;
+                border-radius:12px;
+                margin-bottom:10px;">
+                <h3>📘 {r['المادة']}</h3>
+                <p>⏱️ {int(r['دقائق'])} دقيقة</p>
+                <p>📊 {round(r['النسبة'],1)}%</p>
+            </div>
+            """, unsafe_allow_html=True)
 
-    st.success("✅ تم إنشاء خطة مذاكرة ذكية")
+        top = df.iloc[0]["المادة"]
+        st.info(f"🎯 ابدأ بمادة: {top}")
 
-    for _, row in df.iterrows():
-        if row["name"].strip():
-            st.metric(
-                label=row["name"],
-                value=f"{int(row['study_minutes'])} دقيقة"
-            )
+        st.bar_chart(df.set_index("المادة")["النسبة"])
 
-    st.info("التوزيع يعتمد على ضعف الدرجة × مستوى الصعوبة")
+# =========================
+# About
+# =========================
+else:
+    st.header("📘 About")
 
-# ================== About ==================
-st.divider()
+    st.write("""
+    Sameh Smart Study Assistant
 
-st.header("ℹ️ About / عن المشروع")
+    مساعد مذاكرة ذكي يعتمد على تحليل الأداء
+    لتوزيع وقت المذاكرة.
 
-st.write("""
-Smart Study AI هو مساعد دراسة ذكي يساعد الطلاب على تنظيم وقت المذاكرة
-بناءً على درجاتهم ومستوى صعوبة كل مادة.
+    التقنيات:
+    Python + Streamlit + Pandas
 
-آلية العمل:
-يتم حساب احتياج كل مادة = ضعف الدرجة
-ثم حساب وزن = الاحتياج × الصعوبة
-ثم توزيع الوقت الكلي بشكل نسبي ذكي.
-
-التقنيات المستخدمة:
-Python – Streamlit – Pandas
-
-إعداد وتطوير: المهندس سامح
-""")
+    Developed by Sameh Mohamed
+    """)
