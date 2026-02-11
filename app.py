@@ -10,12 +10,16 @@ st.markdown("""
 .stApp {
     background-color: #6b7280 !important;
 }
+
+/* النص أسود */
 h1,h2,h3,h4,h5,h6,p,label,div,span {
-    color: white !important;
+    color: black !important;
 }
+
+/* الأزرار */
 .stButton>button {
-    background-color: #22c55e;
-    color: white;
+    background-color: white;
+    color: black;
     border-radius: 10px;
     height: 3em;
     font-size: 18px;
@@ -25,7 +29,7 @@ h1,h2,h3,h4,h5,h6,p,label,div,span {
 
 # ---------- عنوان ----------
 st.title("🧠 Sameh Smart Study Assistant")
-st.caption("Developed by Sameh Mohamed — Smart Study AI Project")
+st.caption("Developed by المهندس سامح — Smart Study AI Project")
 
 page = st.radio("القائمة", ["المخطط الذكي", "About المشروع"])
 
@@ -87,10 +91,11 @@ if page == "المخطط الذكي":
         for _, r in df.iterrows():
             st.markdown(f"""
             <div style="
-                background:#4b5563;
+                background:white;
                 padding:15px;
                 border-radius:12px;
-                margin-bottom:10px;">
+                margin-bottom:10px;
+                color:black;">
                 <h3>📘 {r['المادة']}</h3>
                 <p>⏱️ {int(r['دقائق'])} دقيقة</p>
                 <p>📊 {round(r['النسبة'],1)}%</p>
@@ -117,5 +122,5 @@ else:
     التقنيات:
     Python + Streamlit + Pandas
 
-    Developed by Sameh Mohamed
+    Developed by المهندس سامح
     """)
