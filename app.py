@@ -11,9 +11,14 @@ st.markdown("""
     background-color: #6b7280 !important;
 }
 
-/* النص أسود */
+/* النص العام أسود */
 h1,h2,h3,h4,h5,h6,p,label,div,span {
     color: black !important;
+}
+
+/* نص قائمة الصعوبة أبيض فقط */
+div[data-baseweb="select"] span {
+    color: white !important;
 }
 
 /* الأزرار */
